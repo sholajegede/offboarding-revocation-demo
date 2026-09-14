@@ -1,0 +1,47 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+
+# env files
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# convex
+convex/_generated
+
+# local-only working notes — never committed
+BUILD_PLAN.md
+BUILD_LOG.md
+CLAUDE.md
+AGENTS.md
+
+# local audit spool — never committed
+.audit-spool.jsonl*
+
+# saved e2e browser session — never committed
+.e2e-auth.json
