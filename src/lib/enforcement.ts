@@ -64,8 +64,8 @@ async function recordDecision(args: {
   reason: SeamReason;
   cutoffLatencyMs?: number;
 }): Promise<void> {
-  try {
-    await convex().mutation(api.audit.record, {
+  const write = () =>
+    convex().mutation(api.audit.record, {
       correlationId: args.correlationId,
       userId: args.kindeUserId,
       kind: "seam_decision",
@@ -76,7 +76,19 @@ async function recordDecision(args: {
       reason: args.reason,
       cutoffLatencyMs: args.cutoffLatencyMs,
     });
-  } catch (error) {
-    console.error("[seam] could not record decision", error);
+
+  // One retry, not a queue or a durable backlog: a single dropped write
+  // from a momentary Convex hiccup is worth one more attempt before this
+  // decision (already made, already returned to the caller) goes
+  // unaudited. A second failure is logged and left — the seam's decision
+  // itself never waits on, or depends on, its own audit trail succeeding.
+  try {
+    await write();
+  } catch {
+    try {
+      await write();
+    } catch (error) {
+      console.error("[seam] could not record decision after retry", error);
+    }
   }
 }
