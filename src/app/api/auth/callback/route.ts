@@ -64,7 +64,7 @@ export async function GET(request: Request) {
     tokens.expires_in,
   );
 
-  const response = NextResponse.redirect(appConfig().siteUrl);
+  const response = NextResponse.redirect(new URL("/console", appConfig().siteUrl));
   response.cookies.set("session", sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
