@@ -26,6 +26,7 @@ export const record = mutation({
     decision: v.optional(decisionValidator),
     enforcementMode: v.optional(enforcementModeValidator),
     reason: v.string(),
+    cutoffLatencyMs: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("auditLog", { ...args, createdAt: Date.now() });

@@ -35,17 +35,23 @@ export async function enforceToolCall(input: {
   }
 
   let userStatus: "active" | "offboarded" | "unknown" = "unknown";
+  let offboardedAt: number | undefined;
   try {
     const user = await convex().query(api.users.getByKindeUserId, {
       kindeUserId: input.kindeUserId,
     });
     userStatus = user?.status ?? "unknown";
+    offboardedAt = user?.offboardedAt;
   } catch {
     userStatus = "unknown";
   }
 
   const { decision, reason } = decideAccess({ mode, userStatus });
-  await recordDecision({ ...input, correlationId, mode, decision, reason });
+  const cutoffLatencyMs =
+    reason === "user_offboarded" && offboardedAt !== undefined
+      ? Date.now() - offboardedAt
+      : undefined;
+  await recordDecision({ ...input, correlationId, mode, decision, reason, cutoffLatencyMs });
   return { decision, reason, correlationId, mode };
 }
 
@@ -56,6 +62,7 @@ async function recordDecision(args: {
   mode: EnforcementMode;
   decision: SeamDecision;
   reason: SeamReason;
+  cutoffLatencyMs?: number;
 }): Promise<void> {
   try {
     await convex().mutation(api.audit.record, {
@@ -67,6 +74,7 @@ async function recordDecision(args: {
       decision: args.decision,
       enforcementMode: args.mode,
       reason: args.reason,
+      cutoffLatencyMs: args.cutoffLatencyMs,
     });
   } catch (error) {
     console.error("[seam] could not record decision", error);

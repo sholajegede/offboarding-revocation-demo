@@ -64,6 +64,12 @@ export default defineSchema({
     eventTimestamp: v.optional(v.string()),
     /** createdAt - eventTimestamp. The headline speed number for Phase 2. */
     webhookLatencyMs: v.optional(v.number()),
+    /**
+     * createdAt - the user's offboardedAt. Set only on a seam refusal whose
+     * reason is user_offboarded — the headline speed number for Phase 5:
+     * how long after the flag flipped did the seam actually catch it.
+     */
+    cutoffLatencyMs: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_correlationId", ["correlationId"])
