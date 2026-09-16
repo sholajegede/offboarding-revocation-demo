@@ -23,6 +23,17 @@ export const isActive = query({
   },
 });
 
+/** Every user Convex currently believes is active — the reconciliation sweep's input. */
+export const listActive = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("status"), "active"))
+      .collect();
+  },
+});
+
 export const upsert = mutation({
   args: {
     kindeUserId: v.string(),
