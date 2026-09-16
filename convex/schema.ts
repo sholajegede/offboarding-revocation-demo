@@ -58,8 +58,15 @@ export default defineSchema({
       v.union(v.literal("naive"), v.literal("enforced")),
     ),
     reason: v.string(),
+    /** Kinde's event_id. Set only on webhook-sourced rows; dedup key. */
+    eventId: v.optional(v.string()),
+    /** The event's own timestamp, as Kinde sent it. */
+    eventTimestamp: v.optional(v.string()),
+    /** createdAt - eventTimestamp. The headline speed number for Phase 2. */
+    webhookLatencyMs: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_correlationId", ["correlationId"])
-    .index("by_createdAt", ["createdAt"]),
+    .index("by_createdAt", ["createdAt"])
+    .index("by_eventId", ["eventId"]),
 });

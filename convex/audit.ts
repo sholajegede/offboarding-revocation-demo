@@ -32,6 +32,46 @@ export const record = mutation({
   },
 });
 
+/**
+ * Records one webhook delivery, once.
+ *
+ * The dedup check and the insert run inside the same mutation, so a retried
+ * event_id can never race its way into two rows the way a check-then-insert
+ * split across two round trips could.
+ */
+export const recordWebhookEvent = mutation({
+  args: {
+    eventId: v.string(),
+    eventTimestamp: v.string(),
+    correlationId: v.string(),
+    userId: v.optional(v.string()),
+    action: v.string(),
+    reason: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("auditLog")
+      .withIndex("by_eventId", (q) => q.eq("eventId", args.eventId))
+      .unique();
+    if (existing !== null) {
+      return { duplicate: true as const, id: existing._id };
+    }
+    const createdAt = Date.now();
+    const parsed = Date.parse(args.eventTimestamp);
+    const webhookLatencyMs = Number.isNaN(parsed)
+      ? undefined
+      : createdAt - parsed;
+    const id = await ctx.db.insert("auditLog", {
+      ...args,
+      kind: "offboard_event",
+      source: "webhook",
+      webhookLatencyMs,
+      createdAt,
+    });
+    return { duplicate: false as const, id };
+  },
+});
+
 export const byCorrelationId = query({
   args: { correlationId: v.string() },
   handler: async (ctx, { correlationId }) => {
