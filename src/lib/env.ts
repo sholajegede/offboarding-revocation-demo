@@ -44,10 +44,16 @@ export function enforcementMode(): EnforcementMode {
     : "enforced";
 }
 
+/** Issuer origin, e.g. https://<subdomain>.kinde.com — no trailing slash. */
+export function kindeIssuerUrl(): string {
+  assertServer();
+  return required("KINDE_ISSUER_URL").replace(/\/+$/, "");
+}
+
 export function kindeConfig() {
   assertServer();
   return {
-    issuerUrl: required("KINDE_ISSUER_URL").replace(/\/+$/, ""),
+    issuerUrl: kindeIssuerUrl(),
     clientId: required("KINDE_CLIENT_ID"),
     clientSecret: required("KINDE_CLIENT_SECRET"),
     redirectUri: required("KINDE_REDIRECT_URI"),
@@ -66,13 +72,6 @@ export function kindeM2mConfig() {
   };
 }
 
-export function kindeWebhookConfig() {
-  assertServer();
-  return {
-    jwksUrl: required("KINDE_WEBHOOK_JWKS_URL"),
-  };
-}
-
 export function openaiConfig() {
   assertServer();
   return {
@@ -84,7 +83,7 @@ export function openaiConfig() {
 export function appConfig() {
   assertServer();
   return {
-    siteUrl: optional("APP_SITE_URL", "http://localhost:3002").replace(
+    siteUrl: optional("APP_SITE_URL", "http://localhost:3000").replace(
       /\/+$/,
       "",
     ),
@@ -119,7 +118,7 @@ export function configPresence(): Record<string, boolean> {
       has("KINDE_CLIENT_SECRET") &&
       has("KINDE_REDIRECT_URI"),
     kindeM2m: has("KINDE_M2M_CLIENT_ID") && has("KINDE_M2M_CLIENT_SECRET"),
-    kindeWebhook: has("KINDE_WEBHOOK_JWKS_URL"),
+    kindeWebhook: has("KINDE_ISSUER_URL"),
     openai: has("OPENAI_API_KEY") && has("OPENAI_MODEL"),
     convex: has("NEXT_PUBLIC_CONVEX_URL"),
     session: has("SESSION_SECRET"),
