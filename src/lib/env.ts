@@ -72,11 +72,11 @@ export function kindeM2mConfig() {
   };
 }
 
-export function openaiConfig() {
+export function anthropicConfig() {
   assertServer();
   return {
-    apiKey: required("OPENAI_API_KEY"),
-    model: required("OPENAI_MODEL"),
+    apiKey: required("ANTHROPIC_API_KEY"),
+    model: required("ANTHROPIC_MODEL"),
   };
 }
 
@@ -119,7 +119,7 @@ export function configPresence(): Record<string, boolean> {
       has("KINDE_REDIRECT_URI"),
     kindeM2m: has("KINDE_M2M_CLIENT_ID") && has("KINDE_M2M_CLIENT_SECRET"),
     kindeWebhook: has("KINDE_ISSUER_URL"),
-    openai: has("OPENAI_API_KEY") && has("OPENAI_MODEL"),
+    anthropic: has("ANTHROPIC_API_KEY") && has("ANTHROPIC_MODEL"),
     convex: has("NEXT_PUBLIC_CONVEX_URL"),
     session: has("SESSION_SECRET"),
   };
