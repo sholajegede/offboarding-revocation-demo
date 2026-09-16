@@ -2,7 +2,7 @@
  * The closed set of actions an agent may take on internal resources.
  *
  * Closed means exactly this: an action not listed here cannot be invoked, by
- * construction, not by convention. Both the OpenAI tool schema and the
+ * construction, not by convention. Both the Claude tool schema and the
  * enforcement seam are built from this one table, so the two can never drift
  * apart from each other.
  */
@@ -77,18 +77,17 @@ export function listActionNames(): ActionName[] {
   return Object.keys(ACTION_REGISTRY) as ActionName[];
 }
 
-/** Renders the registry as OpenAI Responses API tool definitions. */
-export function toOpenAiTools() {
+/** Renders the registry as Claude Messages API tool definitions. */
+export function toAnthropicTools() {
   return listActionNames().map((name) => {
     const action = ACTION_REGISTRY[name];
     const required = Object.entries(action.params)
       .filter(([, spec]) => spec.required)
       .map(([key]) => key);
     return {
-      type: "function" as const,
       name: action.name,
       description: action.description,
-      parameters: {
+      input_schema: {
         type: "object" as const,
         properties: Object.fromEntries(
           Object.entries(action.params).map(([key, spec]) => [
