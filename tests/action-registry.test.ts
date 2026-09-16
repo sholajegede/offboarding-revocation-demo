@@ -4,7 +4,7 @@ import {
   getAction,
   isRegisteredAction,
   listActionNames,
-  toOpenAiTools,
+  toAnthropicTools,
 } from "../src/lib/action-registry";
 
 describe("action registry", () => {
@@ -26,11 +26,11 @@ describe("action registry", () => {
     expect(ACTION_REGISTRY.write_resource.destructive).toBe(true);
   });
 
-  it("renders one OpenAI tool per registered action, required params only from required specs", () => {
-    const tools = toOpenAiTools();
+  it("renders one Claude tool per registered action, required params only from required specs", () => {
+    const tools = toAnthropicTools();
     expect(tools).toHaveLength(listActionNames().length);
     const writeTool = tools.find((tool) => tool.name === "write_resource");
-    expect(writeTool?.parameters.required).toEqual(["resourceId"]);
-    expect(writeTool?.parameters.additionalProperties).toBe(false);
+    expect(writeTool?.input_schema.required).toEqual(["resourceId"]);
+    expect(writeTool?.input_schema.additionalProperties).toBe(false);
   });
 });
