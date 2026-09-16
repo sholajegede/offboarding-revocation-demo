@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { runAgentTask } from "@/lib/agent-loop";
+import { NextResponse, after } from "next/server";
+import { startAgentRun, continueAgentRun } from "@/lib/agent-loop";
 import { readSessionCookie, decodeSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -7,9 +7,11 @@ export const dynamic = "force-dynamic";
 type RunBody = { task?: string; stepDelayMs?: number };
 
 /**
- * Kicks off one multi-step agent run for the signed-in user. Every tool
- * call the model makes along the way passes through the same enforcement
- * seam as the /api/agent/act test harness.
+ * Starts one multi-step agent run for the signed-in user and responds as
+ * soon as the run exists, so a caller can start watching its live timeline
+ * immediately. The run itself plays out after the response is sent — every
+ * tool call the model makes along the way passes through the same
+ * enforcement seam as the /api/agent/act test harness.
  */
 export async function POST(request: Request) {
   const cookie = readSessionCookie(request);
@@ -27,10 +29,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "task required" }, { status: 400 });
   }
 
-  const outcome = await runAgentTask({
+  const { runId, correlationId, mode } = await startAgentRun({
     kindeUserId: session.kindeUserId,
     task,
-    stepDelayMs: body.stepDelayMs,
   });
-  return NextResponse.json(outcome);
+
+  after(() =>
+    continueAgentRun({
+      runId,
+      correlationId,
+      kindeUserId: session.kindeUserId,
+      task,
+      stepDelayMs: body.stepDelayMs,
+    }),
+  );
+
+  return NextResponse.json({ runId, correlationId, mode });
 }
