@@ -104,6 +104,16 @@ export function convexUrl(): string {
   return required("NEXT_PUBLIC_CONVEX_URL");
 }
 
+/**
+ * The Kinde user id the e2e narrative script suspends and restores. Never
+ * read outside that script — pick a user safe to offboard repeatedly, such
+ * as the same signed-in test account already used for manual live testing.
+ */
+export function e2eKindeUserId(): string {
+  assertServer();
+  return required("E2E_KINDE_USER_ID");
+}
+
 /** Reports which configuration groups are present, never a value. */
 export function configPresence(): Record<string, boolean> {
   assertServer();

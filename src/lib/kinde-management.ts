@@ -71,3 +71,31 @@ export async function suspendKindeUser(kindeUserId: string): Promise<void> {
     throw new Error(`Kinde suspend request failed: ${response.status} ${detail}`);
   }
 }
+
+/**
+ * Restores a suspended Kinde user — the counterpart to suspendKindeUser,
+ * used to reset a test user between e2e narrative runs. Same caveat: this
+ * does not touch Convex directly, since offboarding this build cares about
+ * is a Convex state change driven by the webhook, not by this call.
+ */
+export async function restoreKindeUser(kindeUserId: string): Promise<void> {
+  const issuerUrl = kindeIssuerUrl();
+  const accessToken = await m2mAccessToken();
+
+  const response = await fetch(
+    `${issuerUrl}/api/v1/user?id=${encodeURIComponent(kindeUserId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ is_suspended: false }),
+    },
+  );
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Kinde restore request failed: ${response.status} ${detail}`);
+  }
+}
