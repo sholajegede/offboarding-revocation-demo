@@ -50,6 +50,26 @@ export function classifyOffboarding(event: WebhookEvent): OffboardClassification
   return { offboarding: false, reason: `${event.type}:not_a_user_status_event` };
 }
 
+const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
+
+/**
+ * A verified signature only proves Kinde signed this payload at some point —
+ * not that it arrived close to when it was signed. A captured, still-valid
+ * event replayed for the first time months later would sail past dedup
+ * (dedup only catches an event_id already seen) and past signature
+ * verification (the signature itself never expires). This closes that gap:
+ * anything outside a small window around now is rejected the same way a bad
+ * signature is, before it ever reaches classification.
+ */
+export function isFreshWebhookEvent(
+  event: WebhookEvent,
+  now: number = Date.now(),
+): boolean {
+  const eventTime = Date.parse(event.timestamp);
+  if (Number.isNaN(eventTime)) return false;
+  return Math.abs(now - eventTime) <= MAX_CLOCK_SKEW_MS;
+}
+
 /** The Kinde user id an event is about, when the event carries exactly one. */
 export function extractKindeUserId(event: WebhookEvent): string | undefined {
   switch (event.type) {
