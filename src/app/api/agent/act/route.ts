@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { api } from "../../../../../convex/_generated/api";
-import type { Id } from "../../../../../convex/_generated/dataModel";
-import { convex } from "@/lib/convex-server";
+import { isRegisteredAction } from "@/lib/action-registry";
 import { enforceToolCall } from "@/lib/enforcement";
+import { executeResourceAction } from "@/lib/resource-actions";
 import { readSessionCookie, decodeSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +16,7 @@ type ActBody = {
 /**
  * Test harness for the enforcement seam, ahead of the real agent loop
  * (Phase 4). Every action here goes through enforceToolCall exactly the way
- * the agent's tool calls will.
+ * the agent's tool calls do.
  */
 export async function POST(request: Request) {
   const cookie = readSessionCookie(request);
@@ -32,10 +31,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as ActBody;
   const action = body.action ?? "";
 
-  const seam = await enforceToolCall({
-    kindeUserId: session.kindeUserId,
-    action,
-  });
+  const seam = await enforceToolCall({ kindeUserId: session.kindeUserId, action });
 
   if (seam.decision === "refuse") {
     return NextResponse.json(
@@ -44,40 +40,19 @@ export async function POST(request: Request) {
     );
   }
 
-  let result: unknown;
-  switch (action) {
-    case "list_resources": {
-      result = await convex().query(api.resources.listByOwner, {
-        ownerUserId: session.kindeUserId,
-      });
-      break;
-    }
-    case "read_resource": {
-      if (body.resourceId === undefined) {
-        return NextResponse.json({ error: "resourceId required" }, { status: 400 });
-      }
-      result = await convex().query(api.resources.get, {
-        resourceId: body.resourceId as Id<"resources">,
-      });
-      break;
-    }
-    case "write_resource": {
-      if (body.resourceId === undefined) {
-        return NextResponse.json({ error: "resourceId required" }, { status: 400 });
-      }
-      result = await convex().mutation(api.resources.update, {
-        resourceId: body.resourceId as Id<"resources">,
-        title: body.title,
-        body: body.body,
-        updatedByUserId: session.kindeUserId,
-      });
-      break;
-    }
+  if (!isRegisteredAction(action)) {
+    return NextResponse.json({ error: "unknown action" }, { status: 400 });
   }
 
-  return NextResponse.json({
-    decision: seam.decision,
-    correlationId: seam.correlationId,
-    result,
-  });
+  try {
+    const result = await executeResourceAction(action, body, session.kindeUserId);
+    return NextResponse.json({
+      decision: seam.decision,
+      correlationId: seam.correlationId,
+      result,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "action failed";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }
