@@ -4,7 +4,7 @@ import { readSessionCookie, decodeSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-type RunBody = { task?: string };
+type RunBody = { task?: string; stepDelayMs?: number };
 
 /**
  * Kicks off one multi-step agent run for the signed-in user. Every tool
@@ -27,6 +27,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "task required" }, { status: 400 });
   }
 
-  const outcome = await runAgentTask({ kindeUserId: session.kindeUserId, task });
+  const outcome = await runAgentTask({
+    kindeUserId: session.kindeUserId,
+    task,
+    stepDelayMs: body.stepDelayMs,
+  });
   return NextResponse.json(outcome);
 }

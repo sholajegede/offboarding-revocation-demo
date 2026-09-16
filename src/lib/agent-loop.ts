@@ -65,6 +65,15 @@ function textFrom(content: Anthropic.ContentBlock[]): string {
 export async function runAgentTask(input: {
   kindeUserId: string;
   task: string;
+  /**
+   * Pauses between steps, purely so a human can act during a live
+   * demonstration (e.g. offboarding the acting user mid-run). It has no
+   * effect on the seam or on cutoffLatencyMs, which is real elapsed time
+   * from the moment the user was actually flagged offboarded — this only
+   * slows down how fast the model reaches its next tool call. Defaults to
+   * 0, so normal runs are unaffected.
+   */
+  stepDelayMs?: number;
 }): Promise<RunOutcome> {
   const mode = enforcementMode();
   const correlationId = randomUUID();
@@ -167,6 +176,10 @@ export async function runAgentTask(input: {
     }
 
     messages.push({ role: "user", content: outputs });
+
+    if (input.stepDelayMs !== undefined && input.stepDelayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, input.stepDelayMs));
+    }
   }
 
   await convex().mutation(api.runs.finish, { runId, status: "completed" });
