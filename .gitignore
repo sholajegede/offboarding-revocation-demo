@@ -45,3 +45,8 @@ AGENTS.md
 
 # saved e2e browser session — never committed
 .e2e-auth.json
+
+# convex CLI agent-skill installs — local tooling, not part of the app
+/.agents/
+/.claude/
+skills-lock.json
