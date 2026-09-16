@@ -28,10 +28,13 @@ export default defineSchema({
       v.literal("running"),
       v.literal("completed"),
       v.literal("refused"),
+      v.literal("errored"),
     ),
     correlationId: v.string(),
     startedAt: v.number(),
     endedAt: v.optional(v.number()),
+    /** Set only when status is "errored" — a short, non-sensitive message. */
+    error: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_correlationId", ["correlationId"]),

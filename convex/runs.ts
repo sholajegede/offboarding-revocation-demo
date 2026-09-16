@@ -26,10 +26,15 @@ export const start = mutation({
 export const finish = mutation({
   args: {
     runId: v.id("runs"),
-    status: v.union(v.literal("completed"), v.literal("refused")),
+    status: v.union(
+      v.literal("completed"),
+      v.literal("refused"),
+      v.literal("errored"),
+    ),
+    error: v.optional(v.string()),
   },
-  handler: async (ctx, { runId, status }) => {
-    await ctx.db.patch(runId, { status, endedAt: Date.now() });
+  handler: async (ctx, { runId, status, error }) => {
+    await ctx.db.patch(runId, { status, error, endedAt: Date.now() });
   },
 });
 
